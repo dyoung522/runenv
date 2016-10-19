@@ -4,25 +4,20 @@ module RunEnv
   class OptParse
     attr_accessor :options
 
+    # Class to hold options and set defaults
     class Options
-      # The options specified on the command line will be collected in *options*.
-      # We set default values here.
-
-      attr_accessor :build, :help, :package, :run, :verbose, :version, :cmd
+      attr_accessor :build, :cmd, :package, :run, :verbose
 
       def initialize
         self.build   = false
-        self.help    = false
-        self.package = false
-        self.run     = true
-        self.verbose = 0
-        self.version = false
-
-        self.cmd = {
+        self.cmd     = {
           build:   "npm run package:build",
           package: "bundle install && npm install",
           run:     "bundle exec foreman start -f Procfile.dev"
         }
+        self.package = false
+        self.run     = true
+        self.verbose = 0
       end
     end
 
@@ -39,9 +34,9 @@ module RunEnv
     def self.parse(args, unit_testing=false)
       # The options specified on the command line will be collected in *options*.
       # We set default values here.
-      @options ||= Options.new
 
-      OptionParser.new do |opts|
+      @options = Options.new
+      @parser  ||= OptionParser.new do |opts|
         opts.banner = "Usage: #{File.basename(RunEnv::PROGRAM)} [OPTIONS]"
         opts.banner += "  Runs development environment, optionally with a package and/or build first"
 
@@ -92,8 +87,6 @@ module RunEnv
         opts.separator "Common options:"
 
         opts.on("-h", "--help", "Show this message") do
-          @options.help = true
-
           unless unit_testing
             puts version + "\n"
             puts opts
@@ -102,17 +95,17 @@ module RunEnv
         end
 
         opts.on("-V", "--version", "Show version") do
-          @options.version = version
-
           unless unit_testing
             puts @options.version
             exit
           end
         end
+      end
 
-      end.parse!(args)
+      @parser.parse!(args)
 
-      @options
+      return @options
     end # self.parse
+
   end # class OptParse
 end #module
