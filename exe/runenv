@@ -3,8 +3,39 @@
 require "bundler/setup"
 require "optparse"
 require "runenv"
+require "pp"
 
 opts = RunEnv::OptParse.parse(ARGV)
 
-p opts
+def die(message = "System Error: Please check output")
+  puts message
+  exit 1
+end
 
+def checkbox(check)
+  check ? "[✔]" : "[ ]"
+end
+
+if opts.verbose >= 3
+  puts "#{checkbox(opts.package)} Package command... #{opts.cmd[:package]}"
+  puts "#{checkbox(opts.build)} Build command..... #{opts.cmd[:build]}"
+  puts "#{checkbox(opts.run)} Run command....... #{opts.cmd[:run]}"
+  puts
+
+  if opts.verbose >= 5
+    pp opts if opts.verbose >= 5
+    puts
+  end
+
+end
+
+if !opts.run && !opts.build && !opts.package
+  die "Nothing to do!"
+end
+
+[:package, :build, :run].each do |cmd|
+  if opts.send(cmd)
+    puts "Running > #{opts.cmd[cmd]}" if opts.verbose > 0
+    die unless system opts.cmd[cmd] unless opts.dryrun
+  end
+end

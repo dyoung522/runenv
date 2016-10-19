@@ -6,7 +6,7 @@ module RunEnv
 
     # Class to hold options and set defaults
     class Options
-      attr_accessor :build, :cmd, :package, :run, :verbose
+      attr_accessor :build, :cmd, :dryrun, :package, :run, :verbose
 
       def initialize
         self.build   = false
@@ -15,9 +15,10 @@ module RunEnv
           package: "bundle install && npm install",
           run:     "bundle exec foreman start -f Procfile.dev"
         }
+        self.dryrun  = false
         self.package = false
         self.run     = true
-        self.verbose = 0
+        self.verbose = 1
       end
     end
 
@@ -37,6 +38,8 @@ module RunEnv
 
       @options = Options.new
       @parser  ||= OptionParser.new do |opts|
+        verbose_count = 0
+
         opts.banner = "Usage: #{File.basename(RunEnv::PROGRAM)} [OPTIONS]"
         opts.banner += "  Runs development environment, optionally with a package and/or build first"
 
@@ -61,11 +64,11 @@ module RunEnv
 
         # Verbose switch
         opts.on("-q", "--quiet", "Run quietly") do
-          @options.verbose = 0
+          @options.verbose = verbose_count = 0
         end
 
         opts.on("-v", "--verbose", "Run verbosely (may be specified more than once)") do
-          @options.verbose += 1
+          @options.verbose = verbose_count += 1
         end
 
         opts.separator ""
@@ -85,6 +88,10 @@ module RunEnv
 
         opts.separator ""
         opts.separator "Common options:"
+
+        opts.on("--dry-run", "Don't actually run commands") do
+          @options.dryrun = true
+        end
 
         opts.on("-h", "--help", "Show this message") do
           unless unit_testing
